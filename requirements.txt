@@ -8,11 +8,16 @@ scikit-learn==1.6.1
 python-dotenv==1.0.0
 soundfile==0.12.1
 requests==2.31.0
-pytest==8.0.0
 joblib==1.4.0
 scipy==1.13.1
 setuptools
+
+# Whisper
 openai-whisper==20231117
+
+# CPU-only torch (required by whisper)
+torch --index-url https://download.pytorch.org/whl/cpu
+
+# Keras + CPU TensorFlow
+tensorflow-cpu
 keras
-
-
