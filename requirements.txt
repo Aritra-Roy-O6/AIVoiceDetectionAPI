@@ -12,6 +12,5 @@ setuptools
 
 # Keras with Torch Backend (No TensorFlow)
 keras
+tensorflow-cpu
 
-# Torch CPU-only (Critical for size < 4GB)
-torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
