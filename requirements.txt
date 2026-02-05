@@ -12,11 +12,11 @@ joblib==1.4.0
 scipy==1.13.1
 setuptools
 
-# Whisper
-openai-whisper==20231117
+# Whisper removed for deployment size
+# openai-whisper==20231117
+# torch --index-url https://download.pytorch.org/whl/cpu
 
-# CPU-only torch (required by whisper)
-torch --index-url https://download.pytorch.org/whl/cpu
+langdetect
 
 # Keras + CPU TensorFlow
 tensorflow-cpu
