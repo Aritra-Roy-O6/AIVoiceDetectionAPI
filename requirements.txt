@@ -4,14 +4,14 @@ python-multipart
 pydub
 librosa
 numpy
-scikit-learn
 python-dotenv
 soundfile
 requests
-joblib
 scipy
 setuptools
 
-tensorflow-cpu
+# Keras with Torch Backend (No TensorFlow)
 keras
-torch==2.3.1
+
+# Torch CPU-only (Critical for size < 4GB)
+torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
