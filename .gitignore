@@ -21,6 +21,9 @@ model/*.pkl
 model/*.keras
 model/*.h5
 
+# Allow specific production model
+!model/model-1.keras
+
 # IDE / Editor
 .vscode/
 .idea/
