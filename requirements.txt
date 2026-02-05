@@ -21,4 +21,4 @@ langdetect
 # Keras + CPU TensorFlow
 tensorflow-cpu
 keras
-torch --index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1
