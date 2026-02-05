@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Environment Variables
+.env
+
+# Model Files (Large Binaries)
+# We ignore specific large model files but keep the directory
+*.pkl
+*.keras
+*.h5
+*.pth
+model/*.pkl
+model/*.keras
+model/*.h5
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Testing & Logs
+.pytest_cache/
+*.log
+tests/__pycache__/
+coverage.xml
+.coverage
+
+# Temporary Files
+temp_*.h5
