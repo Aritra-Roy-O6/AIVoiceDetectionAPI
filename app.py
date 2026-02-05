@@ -32,6 +32,9 @@ class Message(BaseModel):
     stage: str
     message: str
 
+class DetectRequest(BaseModel):
+    audio_base64: str = Field(..., description="Base64 encoded audio string")
+
 class DetectResponse(BaseModel):
     status: str
     detected_language: Optional[str] = None
@@ -62,65 +65,27 @@ async def startup_event():
     except LanguageDetectionError:
         logger.critical("Language detection model failed to load.")
 
-from fastapi import Request
-
 @app.post("/detect", response_model=DetectResponse)
-async def detect_voice(request: Request, api_key: str = Depends(get_api_key)):
+async def detect_voice(request_body: DetectRequest, api_key: str = Depends(get_api_key)):
     """
     Detects whether the provided voice sample is AI-generated or Human.
     Accepts:
-    - JSON: {"audio_base64": "..."} (Content-Type: application/json)
-    - File: multipart/form-data with 'file' field
+    - JSON: {"audio_base64": "..."}
     """
     messages = []
     
     try:
-        content_type = request.headers.get("content-type", "")
-        audio_bytes = None
+        # 1. Parse Input
+        messages.append(Message(stage="input_validation", message="Received JSON request"))
         
-        # 1. Parse Input based on Content-Type
-        if "application/json" in content_type:
-            messages.append(Message(stage="input_validation", message="Received JSON request"))
-            try:
-                body = await request.json()
-            except Exception:
-                raise HTTPException(status_code=400, detail="Invalid JSON body")
-                
-            audio_base64 = body.get("audio_base64")
-            if not audio_base64:
-                 raise HTTPException(status_code=400, detail="Missing 'audio_base64' field in JSON")
-            
-            messages.append(Message(stage="input_validation", message="Received Base64 audio input"))
-            audio_bytes = decode_base64_audio(audio_base64)
-            
-        elif "multipart/form-data" in content_type:
-            messages.append(Message(stage="input_validation", message="Received multipart/form-data request"))
-            form = await request.form()
-            file = form.get("file")
-            
-            if not file:
-                raise HTTPException(status_code=400, detail="Missing 'file' field in multipart request")
-            
-            # Check if it's an UploadFile (Starlette)
-            # Relaxed check: ensure it has 'read' method and 'filename' attribute
-            if not (hasattr(file, "read") or hasattr(file, "file")):
-                 raise HTTPException(status_code=400, detail=f"Invalid file upload: Expected UploadFile, got {type(file)}")
+        audio_base64 = request_body.audio_base64
+        if not audio_base64:
+             # Should be caught by Pydantic but double check
+             raise HTTPException(status_code=400, detail="Missing 'audio_base64' field")
+        
+        messages.append(Message(stage="input_validation", message="Received Base64 audio input"))
+        audio_bytes = decode_base64_audio(audio_base64)
 
-            # Validate size
-            # UploadFile usually has a 'file' attribute which is SpooledTemporaryFile
-            # We can read chunks or seek to end.
-            # file.file is the python file object
-            file.file.seek(0, 2)
-            size = file.file.tell()
-            file.file.seek(0)
-            
-            if size > MAX_AUDIO_SIZE_BYTES:
-                raise AudioProcessingError(f"File size exceeds limit of {MAX_AUDIO_SIZE_BYTES} bytes")
-                
-            audio_bytes = await file.read()
-            
-        else:
-             raise HTTPException(status_code=400, detail="Unsupported Content-Type. Use 'application/json' or 'multipart/form-data'.")
 
         if not audio_bytes:
              # Should be caught above, but safety check

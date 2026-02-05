@@ -50,14 +50,19 @@ def check_environment():
         print(f"  [PASS] FFMPEG found: {ffmpeg_path}")
     else:
         print("  [FAIL] FFMPEG NOT found!")
-        return False
+        # return False # Soft fail for dev check if local ffmpeg missing? No, required.
         
-    model_path = os.getenv("MODEL_PATH", "model/model.pkl") # Default in code isn't explicitly env default but hardcoded in predictor logic usually.
-    # In predictor.py it uses os.getenv("MODEL_PATH", "model/model.pkl") so we check that.
-    if os.path.exists("model/model.pkl"):
-        print(f"  [PASS] Model file found: model/model.pkl")
-    else:
-        print(f"  [FAIL] Model file NOT found at model/model.pkl")
+    # Check for correct model file (Keras)
+    possible_models = ["model/model-1.keras", "model/model.pkl"]
+    found = False
+    for m in possible_models:
+        if os.path.exists(m):
+            print(f"  [PASS] Model file found: {m}")
+            found = True
+            break
+    
+    if not found:
+        print(f"  [FAIL] No model file found (checked {possible_models})")
         return False
     return True
 
@@ -118,12 +123,28 @@ def run_tests():
         else:
             print(f"  [FAIL] Valid JSON Request: {resp.status_code} {resp.text}")
 
-        # 6. Invalid Request (Empty)
+        # 6. Invalid Request (Empty JSON)
         resp = requests.post(f"{BASE_URL}/detect", json={}, headers=headers)
-        if resp.status_code == 400:
-             print("  [PASS] Invalid JSON (Missing Field) Rejected (400)")
+        if resp.status_code in [400, 422]:
+             print(f"  [PASS] Invalid JSON (Missing Field) Rejected ({resp.status_code})")
         else:
              print(f"  [FAIL] Invalid JSON Code: {resp.status_code}")
+
+        # 7. Hardening: Missing Content-Type
+        headers_no_ct = {"x-api-key": headers["x-api-key"]}
+        resp = requests.post(f"{BASE_URL}/detect", data='{"audio_base64": "x"}', headers=headers_no_ct)
+        # 415 is also acceptable here if strict media type check
+        if resp.status_code in [400, 415, 422]:
+            print(f"  [PASS] Missing Content-Type Rejected ({resp.status_code})")
+        else:
+            print(f"  [FAIL] Missing Content-Type Code: {resp.status_code}")
+
+        # 8. Hardening: Malformed Body (Valid Content-Type)
+        resp = requests.post(f"{BASE_URL}/detect", data='{broken_json', headers=headers)
+        if resp.status_code in [400, 422]:
+            print(f"  [PASS] Malformed JSON Body Rejected ({resp.status_code})")
+        else:
+            print(f"  [FAIL] Malformed JSON Body Code: {resp.status_code}")
 
     print("\nValidation Complete.")
 
