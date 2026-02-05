@@ -29,7 +29,7 @@ class VoicePredictor:
         
         # Set Keras backend to torch to avoid TF dependency if possible
         os.environ["KERAS_BACKEND"] = "torch"
-        self.load_model()
+        # self.load_model() # Disabled for lazy loading
 
     @classmethod
     def get_instance(cls):
@@ -71,8 +71,13 @@ class VoicePredictor:
         """
         Predicts whether the voice is AI_GENERATED or HUMAN.
         """
+        # Lazy Loading
         if self.model is None:
-            raise PredictionError("Model is not loaded.")
+            try:
+                self.load_model()
+            except Exception as e:
+                logger.error(f"Lazy loading failed: {e}. returning Fallback.")
+                return "HUMAN", 0.5
 
         try:
             target_sr = 16000
